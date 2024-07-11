@@ -773,6 +773,7 @@ clippy.Balloon.prototype = {
 
         this._complete = complete;
         this._sayWords(text, hold, complete);
+        console.log("CLIPPY SPEAK", text)
     },
 
     show:function () {

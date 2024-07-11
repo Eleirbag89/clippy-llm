@@ -8,7 +8,6 @@ const talk_f = function talk() {
       "Sometimes, a simple ‘thank you' can make a big difference.",
       "No need to stress - take a deep breath and tackle one task at a time.",
       "The greatest achievements start with a single step. Keep moving forward.",
-      "Hey there",
       "Believe in yourself - you're capable of amazing things.",
       "Just like a puzzle, you'll find the missing pieces and create something extraordinary.",
       "Hard work pays off - keep pushing towards your goals!",
@@ -61,7 +60,9 @@ clippy.load("Clippy", function(agent) {
     window.agent = agent;
 
     agent.show();
+    agent.reposition();
     window.agent.play("Greeting");
+    window.agent.speak( "Hey there");
     //agent.moveTo(100, 100);
 
     setInterval(talk_f, 12000);
