@@ -180,6 +180,9 @@ clippy.Agent.prototype = {
             this._balloon.speak(complete, text, hold);
         }, this);
     },
+    is_speaking:function () {
+        return !this._queue.is_empty()
+    },
 
 
     /***
@@ -988,6 +991,9 @@ clippy.Queue.prototype = {
         if (this._queue.length === 1 && !this._active) {
             this._progressQueue();
         }
+    },
+    is_empty:function() {
+        return (this._queue.length === 0)
     },
 
     _progressQueue:function () {

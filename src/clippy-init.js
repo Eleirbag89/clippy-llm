@@ -48,9 +48,12 @@ const talk_f = function talk() {
       "Remember that progress is not always linear - there will be ups and downs, but keep pushing forward.",
       "Believe in yourself and your abilities - you have what it takes to achieve great things."
     ];
-    var index = Math.floor((Math.random() * talks.length));
-    window.agent.speak(talks[index]);
-    window.agent.play("Explain");
+    if (!window.agent.is_speaking()) {
+      var index = Math.floor((Math.random() * talks.length));
+      window.agent.speak(talks[index]);
+      window.agent.play("Explain");
+    }
+   
   }
 
 
