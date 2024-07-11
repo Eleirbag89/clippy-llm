@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "extension",
-  "description": "Transformers.js | Sample browser extension",
+  "name": "ClippyLlm",
+  "description": "ClippyLlm | Your smart assistant",
   "version": "0.0.1",
   "permissions": [
     "activeTab",
