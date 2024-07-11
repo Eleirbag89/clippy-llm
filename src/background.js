@@ -10,12 +10,13 @@ env.allowLocalModels = false;
 env.backends.onnx.wasm.numThreads = 1;
 
 
-class PipelineSingleton {
-    static task = 'text-classification';
-    static model = 'Xenova/distilbert-base-uncased-finetuned-sst-2-english';
+class SummarizePipelineSingleton {
+    static task = 'summarization';
+    static model = 'Xenova/distilbart-cnn-6-6';
     static instance = null;
-
+    
     static async getInstance(progress_callback = null) {
+        console.log("SIngleton pipeline");
         if (this.instance === null) {
             this.instance = pipeline(this.task, this.model, { progress_callback });
         }
@@ -24,17 +25,20 @@ class PipelineSingleton {
     }
 }
 
-// Create generic classify function, which will be reused for the different types of events.
-const classify = async (text) => {
+const summarize = async (text) => {
     // Get the pipeline instance. This will load and build the model when run for the first time.
-    let model = await PipelineSingleton.getInstance((data) => {
+    console.log("SUMMARIZE METHOD")
+    let generator = await SummarizePipelineSingleton.getInstance((data) => {
         // You can track the progress of the pipeline creation here.
         // e.g., you can send `data` back to the UI to indicate a progress bar
-        // console.log('progress', data)
+        console.log('progress', data)
     });
 
     // Actually run the model on the input text
-    let result = await model(text);
+    let result = await generator(text, {
+        max_new_tokens: 100,
+      });
+    console.log("Summarize result", result)
     return result;
 };
 
@@ -45,8 +49,8 @@ const classify = async (text) => {
 chrome.runtime.onInstalled.addListener(function () {
     // Register a context menu item that will only show up for selection text.
     chrome.contextMenus.create({
-        id: 'classify-selection',
-        title: 'Classify "%s"',
+        id: 'summarize-selection',
+        title: 'Summarize "%s"',
         contexts: ['selection'],
     });
 });
@@ -54,11 +58,30 @@ chrome.runtime.onInstalled.addListener(function () {
 // Perform inference when the user clicks a context menu
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     // Ignore context menu clicks that are not for classifications (or when there is no input)
-    if (info.menuItemId !== 'classify-selection' || !info.selectionText) return;
+    if (info.menuItemId !== 'summarize-selection' || !info.selectionText) return;
+    console.log("SUMMARIZE")
+    chrome.scripting.executeScript({
+        target: { tabId: tab.id },    // Run in the tab that the user clicked in
+        args: [],               // The arguments to pass to the function
+        function: () => {       // The function to run
+            // NOTE: This function is run in the context of the web page, meaning that `document` is available.
+            window.agent.start_processing();
+        },
+    });
+    let timer = Date.now();
 
     // Perform classification on the selected text
-    let result = await classify(info.selectionText);
-
+    let result = await summarize(info.selectionText);
+    let end_time = Math.floor((Date.now() -timer) / 1000)
+    console.log("Time taken", end_time);
+    chrome.scripting.executeScript({
+        target: { tabId: tab.id },    // Run in the tab that the user clicked in
+        args: [],               // The arguments to pass to the function
+        function: () => {       // The function to run
+            // NOTE: This function is run in the context of the web page, meaning that `document` is available.
+            window.agent.end_processing();
+        },
+    });
     // Do something with the result
     chrome.scripting.executeScript({
         target: { tabId: tab.id },    // Run in the tab that the user clicked in
@@ -67,6 +90,10 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
             // NOTE: This function is run in the context of the web page, meaning that `document` is available.
             console.log('result', result)
             console.log('document', document)
+            console.log("summary_text", result[0].summary_text);
+            window.agent.speak(result[0].summary_text);
+            window.agent.play("Explain");
+            console.log("Agent", window.agent)
         },
     });
 });

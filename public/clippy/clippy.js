@@ -180,8 +180,21 @@ clippy.Agent.prototype = {
             this._balloon.speak(complete, text, hold);
         }, this);
     },
-    is_speaking:function () {
-        return !this._queue.is_empty()
+    start_processing:function () {
+        this._processing = true;
+        this.think()
+    },
+    think:function () {
+        if (this._processing) {
+            console.log("Clippy is processing")
+            this.play('Thinking', undefined, () => window.agent.think());
+        }
+    },  
+    end_processing:function () {
+        this._processing = false;
+    },
+    is_processing:function () {
+        return this._processing == true;
     },
 
 
