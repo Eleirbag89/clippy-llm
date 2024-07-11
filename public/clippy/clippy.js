@@ -475,7 +475,7 @@ clippy.Animator = function (el, path, data, sounds) {
     this._started = false;
     this._sounds = {};
     this.currentAnimationName = undefined;
-    this.preloadSounds(sounds);
+    //this.preloadSounds(sounds);
     this._overlays = [this._el];
     var curr = this._el;
 
@@ -494,7 +494,7 @@ clippy.Animator.prototype = {
         var frameSize = this._data.framesize;
         el.css('display', "none");
         el.css({width:frameSize[0], height:frameSize[1]});
-        el.css('background', "url('" + this._path + "/map.png') no-repeat");
+        el.css('background', "url('" + chrome.runtime.getURL('clippy/map.png') + "') no-repeat");
 
         return el;
     },
@@ -595,6 +595,7 @@ clippy.Animator.prototype = {
     },
 
     _playSound:function () {
+        return
         var s = this._currentFrame.sound;
         if (!s) return;
         var audio = this._sounds[s];
@@ -851,7 +852,7 @@ clippy.load = function (name, successCb, failCb) {
     
     var mapDfd = clippy.load._loadMap(path);
     var agentDfd = clippy.load._loadAgent(name, path);
-    var soundsDfd = clippy.load._loadSounds(name, path);
+    //var soundsDfd = clippy.load._loadSounds(name, path);
 
     var data;
     agentDfd.done(function (d) {
@@ -860,9 +861,9 @@ clippy.load = function (name, successCb, failCb) {
 
     var sounds;
 
-    soundsDfd.done(function (d) {
+    /*soundsDfd.done(function (d) {
         sounds = d;
-    });
+    });*/
 
     // wrapper to the success callback
     var cb = function () {
@@ -870,7 +871,7 @@ clippy.load = function (name, successCb, failCb) {
         successCb(a);
     };
 
-    $.when(mapDfd, agentDfd, soundsDfd).done(cb).fail(failCb);
+    $.when(mapDfd, agentDfd).done(cb).fail(failCb);
 };
 
 clippy.load._maps = {};
@@ -881,7 +882,8 @@ clippy.load._loadMap = function (path) {
     // set dfd if not defined
     dfd = clippy.load._maps[path] = $.Deferred();
 
-    var src = path + '/map.png';
+    var src = chrome.runtime.getURL('clippy/map.png');
+    console.log("Map.png path", src);
     var img = new Image();
 
     img.onload = dfd.resolve;
@@ -933,6 +935,7 @@ clippy.load._loadAgent = function (name, path) {
 };
 
 clippy.load._loadScript = function (src) {
+    return;
     var script = document.createElement('script');
     script.setAttribute('src', src);
     script.setAttribute('async', 'async');
