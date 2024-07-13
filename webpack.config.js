@@ -19,6 +19,10 @@ const config = {
         path: path.resolve(__dirname, 'build'),
         filename: '[name].js',
     },
+    experiments: {
+        syncWebAssembly: true,
+      },
+    
     plugins: [
         new HtmlWebpackPlugin({
             template: './src/popup.html',
