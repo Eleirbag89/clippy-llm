@@ -39,45 +39,10 @@ const getPageContent = () => {
   }
 
   function splitText(text, maxLength = 512) {
-    text = text.replace(/(\n\s*)+/g, '\n');
-
-    // Dividi il testo in parole mantenendo la punteggiatura
-    const words = text.match(/\S+|\n/g);
-    const chunks = [];
-    let currentChunk = "";
-
-    words.forEach(word => {
-        // Aggiungi la parola corrente al chunk se non supera la lunghezza massima
-        if ((currentChunk.length + word.length + 1) <= maxLength) {
-            if (currentChunk.length > 0) {
-                currentChunk += " ";
-            }
-            currentChunk += word;
-        } else {
-            // Se aggiungere la parola supera la lunghezza massima, salva il chunk attuale
-            chunks.push(currentChunk.trim());
-            currentChunk = word;
-        }
-    });
-
-    // Aggiungi l'ultimo chunk rimanente
-    if (currentChunk) {
-        chunks.push(currentChunk.trim());
-    }
-
-    // Ottimizza i chunk per terminare le frasi
-    const optimizedChunks = [];
-    chunks.forEach(chunk => {
-        if (optimizedChunks.length > 0 &&
-            (optimizedChunks[optimizedChunks.length - 1].length + chunk.length + 1 <= maxLength) &&
-            (!/[.!?]$/.test(optimizedChunks[optimizedChunks.length - 1]))) {
-            optimizedChunks[optimizedChunks.length - 1] += " " + chunk;
-        } else {
-            optimizedChunks.push(chunk);
-        }
-    });
-
-    return optimizedChunks;
+    let sentences = text.split(/(?<=[.!?])\s+|\n+/);
+    sentences = sentences.map(s => s.trim()).filter(sentence => sentence.trim().length > 0);
+    console.log("sentences: ",sentences)
+    return sentences;
 }
 // Listen for changes made to the textbox.
 inputElement.addEventListener('input', (event) => {
@@ -114,7 +79,7 @@ inputElement.addEventListener('input', (event) => {
                     text: [q],
                 }
                 chrome.runtime.sendMessage(embedding_message_query, (processed) => {
-                    const results = index.search(processed[0], 2);
+                    const results = index.search(processed[0], 10);
                     console.log("Similarity", results.neighbors);
                     // Display search result
                     let context="";

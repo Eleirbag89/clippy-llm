@@ -44,14 +44,14 @@ class EmbeddingPipelineSingleton {
 
 
 class QuestionAnsweringPipelineSingleton {
-    static task = 'text2text-generation';
-    static model = 'Xenova/LaMini-Flan-T5-783M';
+    static task = 'question-answering';
+    static model = 'Xenova/distilbert-base-uncased-distilled-squad';
     static instance = null;
     
     static async getInstance(progress_callback = null) {
         console.log("Singleton pipeline question answering");
         if (this.instance === null) {
-            this.instance = pipeline(this.task, this.model, { return_full_text: false, progress_callback });
+            this.instance = pipeline(this.task, this.model, { progress_callback });
         }
 
         return this.instance;
@@ -107,9 +107,9 @@ Question: ${question}
 ### Response:`;
     console.log("PROMPT", prompt)
 
-    const output =  await generator(prompt, { add_special_tokens: true, max_new_tokens: 60, repetition_penalty: 1.2});
-    const answer = output[0].generated_text
+    const output =  await generator(question, context);
     console.log("output", output)
+    const answer = output.answer
     return answer;
 
 };
