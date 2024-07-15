@@ -48,3 +48,13 @@ body {
     font-family: 'Roboto Mono', monospace;
     height: 100px;
 }
+#ask-clippyllm {
+    background-color: #04AA6D; /* Green */
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+  }

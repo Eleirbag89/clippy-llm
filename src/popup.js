@@ -4,7 +4,7 @@ const { Voy } = await import("voy-search");
 
 const inputElement = document.getElementById('text');
 const outputElement = document.getElementById('output');
-
+const clippy_button = document.getElementById('ask-clippyllm');
 
 const getPageContent = () => {
  
@@ -45,10 +45,10 @@ const getPageContent = () => {
     return sentences;
 }
 // Listen for changes made to the textbox.
-inputElement.addEventListener('input', (event) => {
+clippy_button.addEventListener('click', (event) => {
     
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        console.log("Execute Script");
+        console.log("Execute Script", inputElement.value);
         chrome.scripting.executeScript({
           target: { tabId: tabs[0].id },
           func: getPageContent
