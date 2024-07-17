@@ -102,16 +102,4 @@ clippy_button.addEventListener('click', (event) => {
 
   return;
 
-    // Bundle the input data into a message.
-    const message = {
-        action: 'summarize',
-        text: event.target.value,
-    }
-
-    // Send this message to the service worker.
-    chrome.runtime.sendMessage(message, (response) => {
-        // Handle results returned by the service worker (`background.js`) and update the popup's UI.
-        outputElement.innerText = JSON.stringify(response, null, 2);
-    });
-
 });
