@@ -1,6 +1,7 @@
 // background.js - Handles requests from the UI, runs the model, then sends back a response
 
-import { pipeline, env, AutoTokenizer, AutoModelForCausalLM} from '@xenova/transformers';
+import { pipeline, env} from '@xenova/transformers';
+import { openDB } from 'idb';
 
 // Skip initial check for local models, since we are not loading any local models.
 env.allowLocalModels = false;
@@ -10,7 +11,31 @@ env.allowLocalModels = false;
 env.backends.onnx.wasm.numThreads = 1;
 //env.backends.onnx.wasm.proxy = false;
 
+const idb = {
+    clippy_db: openDB("clippy_db", 1, {
+        upgrade: (db) => {
+            const store = db.createObjectStore('embeddings', { keyPath: 'url' });
+            store.createIndex('page', 'page', { unique: false });
 
+          }
+      }),
+  };
+
+  async function add_embeddings(elements) {
+    const db = await idb.clippy_db;
+    const tx = db.transaction('embeddings', 'readwrite');
+    const store = tx.objectStore('embeddings');
+    elements.forEach(element => {
+        store.put(element);
+    });
+    
+    await tx.done;
+  }
+
+  async function get_embeddings(page) {
+    const db = await idb.clippy_db;
+    return await db.getAllFromIndex('embeddings', 'page', page );
+  }
 
 class SummarizePipelineSingleton {
     static task = 'summarization';
@@ -75,9 +100,17 @@ const summarize = async (text) => {
     return result;
 };
 
-const embed = async (text) => {
+const embed = async (text, page_url) => {
     // Get the pipeline instance. This will load and build the model when run for the first time.
-    console.log("EMBED METHOD")
+    console.log("EMBED METHOD", page_url)
+    if (page_url) {
+        const embeddings = await get_embeddings(page_url);
+        console.log("IndexDb emb", embeddings)
+        if (embeddings) {
+            return embeddings;
+        }
+         
+    }
     let extractor = await EmbeddingPipelineSingleton.getInstance((data) => {
         // You can track the progress of the pipeline creation here.
         // e.g., you can send `data` back to the UI to indicate a progress bar
@@ -85,27 +118,31 @@ const embed = async (text) => {
     });
 
     // Actually run the model on the input text
-    let result = await extractor(text,  { pooling: 'mean', normalize: true });
-    console.log("EMBED result", result.tolist())
-    return result.tolist();
+    let result = (await extractor(text,  { pooling: 'mean', normalize: true })).tolist();
+    console.log("EMBED result", result)
+    const data = result.map(( emb , i) => ({
+        id: String(i),
+        title: text[i],
+        url: `${page_url}/${i}`,
+        page: `${page_url}`,
+        embeddings: emb,
+    }));
+    if (page_url) {
+        await add_embeddings(data);
+    }
+   
+
+    return data;
 };
 
 const answer_question = async (question, context) => {
     // Get the pipeline instance. This will load and build the model when run for the first time.
-    console.log("answer_question METHOD", question, context)
+    console.log("answer_question METHOD\nQuestion:", question, "\nContext: ", context)
     const generator = await QuestionAnsweringPipelineSingleton.getInstance((data) => {
         // You can track the progress of the pipeline creation here.
         // e.g., you can send `data` back to the UI to indicate a progress bar
         console.log('progress', data)
     });
-    const prompt = `Below is an instruction that describes a task. Write a response that appropriately completes the request.
-    
-### Instruction:
-Answer the following question, using only the following documents as context:
-<context>\n${context}\n</context>
-Question: ${question}
-### Response:`;
-    console.log("PROMPT", prompt)
 
     const output =  await generator(question, context);
     console.log("output", output)
@@ -192,8 +229,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     } else if (message.action == 'embed') {
 
         (async function () {
-            // Perform classification
-            let result = await embed(message.text);
+            let result = await embed(message.text, message.url);
 
             // Send response back to UI
             sendResponse(result);

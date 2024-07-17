@@ -7,7 +7,7 @@ const outputElement = document.getElementById('output');
 const clippy_button = document.getElementById('ask-clippyllm');
 
 const getPageContent = () => {
- 
+    const page_url = document.URL;
     const clone = document.body.cloneNode(true);
     console.log("getPageContent clone",clone)
 
@@ -34,7 +34,7 @@ const getPageContent = () => {
       }
     }
     console.log("Text: ",text)
-    return text;
+    return [text, page_url];
 
   }
 
@@ -53,7 +53,8 @@ clippy_button.addEventListener('click', (event) => {
           target: { tabId: tabs[0].id },
           func: getPageContent
         }, (page_content) => {
-            const dom = page_content[0].result;
+            const [dom, page_url] = page_content[0].result;
+           
             console.log("Content", page_content)
             const phrases = splitText(dom);
         
@@ -61,15 +62,10 @@ clippy_button.addEventListener('click', (event) => {
             const embedding_message = {
                 action: 'embed',
                 text: phrases,
+                url: page_url
             }
-            chrome.runtime.sendMessage(embedding_message, (processed) => {
+            chrome.runtime.sendMessage(embedding_message, (data) => {
                 // Handle results returned by the service worker (`background.js`) and update the popup's UI.
-                const data = processed.map(( emb , i) => ({
-                    id: String(i),
-                    title: phrases[i],
-                    url: `/path/${i}`,
-                    embeddings: emb,
-                }));
                 const resource = { embeddings: data};
                 const index = new Voy(resource);
                 const q = event.target.value;
@@ -102,20 +98,7 @@ clippy_button.addEventListener('click', (event) => {
             });
 
         });
-      });
-    
-    
-
-    // Index embeddings with voy
-    /*const data = processed.map(({ result }, i) => ({
-        id: String(i),
-        title: phrases[i],
-        url: `/path/${i}`,
-        embeddings: result,
-    }));
-    */
-
-   
+      }); 
 
   return;
 
