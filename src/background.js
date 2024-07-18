@@ -3,6 +3,9 @@
 import { pipeline, env} from '@xenova/transformers';
 import { openDB } from 'idb';
 
+import { ChatWebLLM } from "@langchain/community/chat_models/webllm";
+import { HumanMessage, SystemMessage, AIMessage } from "@langchain/core/messages";
+
 // Skip initial check for local models, since we are not loading any local models.
 env.allowLocalModels = false;
 
@@ -68,17 +71,22 @@ class EmbeddingPipelineSingleton {
 }
 
 
-class QuestionAnsweringPipelineSingleton {
-    static task = 'question-answering';
-    static model = 'Xenova/distilbert-base-uncased-distilled-squad';
+class InstructModelSingleton {
     static instance = null;
     
     static async getInstance(progress_callback = null) {
-        console.log("Singleton pipeline question answering");
+        console.log("Singleton Instruct model");
         if (this.instance === null) {
-            this.instance = pipeline(this.task, this.model, { progress_callback });
-        }
+            const webllmModel = new ChatWebLLM({
+                model: "Phi-3-mini-4k-instruct-q4f16_1-MLC",
+                chatOptions: {
+                    temperature: 0.1,
+                },
+              });
 
+            await webllmModel.initialize(progress_callback);
+            this.instance = webllmModel
+        }
         return this.instance;
     }
 }
@@ -161,7 +169,7 @@ const embed = async (text, page_url, tab_id) => {
         target: { tabId: tab_id },    
         args: [],              
         function: () => {    
-            window.agent.clear_text();  
+            window.agent.clear_text();
             window.agent.speak("Web page analisys done.");
         },
     });
@@ -170,40 +178,40 @@ const embed = async (text, page_url, tab_id) => {
 };
 
 const answer_question = async (question, context, tab_id) => {
+    const WEBLLM_RESPONSE_SYSTEM_TEMPLATE = `You are Clippy, an helpfull assistant. Using the provided context, answer the user's question to the best of your ability using the resources provided.
+Generate a SHORT and concise answer for a given question based solely on the context. You must only use information from the provided context. Use an unbiased and journalistic tone. Combine search results together into a coherent answer. Do not repeat text, stay focused, and stop generating when you have answered the question.
+If there is nothing in the context relevant to the question at hand, just say "Hmm, I'm not sure." Don't try to make up an answer.`;
+
     // Get the pipeline instance. This will load and build the model when run for the first time.
     console.log("answer_question METHOD\nQuestion:", question, "\nContext: ", context)
-    const generator = await QuestionAnsweringPipelineSingleton.getInstance((data) => {
-        // You can track the progress of the pipeline creation here.
-        // e.g., you can send `data` back to the UI to indicate a progress bar
-        console.log('progress', data)
-        if (data.status == 'initiate') {
-            chrome.scripting.executeScript({
-                target: { tabId: tab_id },    // Run in the tab that the user clicked in
-                args: [data],               // The arguments to pass to the function
-                function: (data) => {       // The function to run
-                    
-                    window.agent.speak("Loading model file" + data.file  + " for question answering");
-                    window.agent.start_processing();
-                },
-            });
-
-        } else if (data.status == 'ready') {
-           
-            chrome.scripting.executeScript({
-                target: { tabId: tab_id },    // Run in the tab that the user clicked in
-                args: [],               // The arguments to pass to the function
-                function: () => {       // The function to run
-                    window.agent.clear_text();
-                    window.agent.speak("Processing your question...");
-                },
-            });
-
-        }
+    let webllmModel = await InstructModelSingleton.getInstance((data) => {
+        chrome.scripting.executeScript({
+            target: { tabId: tab_id },    // Run in the tab that the user clicked in
+            args: [data],               // The arguments to pass to the function
+            function: (data) => {       // The function to run
+                window.agent.start_processing();
+                window.agent.clear_text();
+                window.agent.speak(data.text, false);
+            },
+        });
     });
 
-    const output =  await generator(question, context);
-    console.log("output", output)
-    const answer = output.answer
+    // Best guess at Phi-3 tokens
+    let chatModel = webllmModel.bind({
+        stop: ["\nInstruct:", "Instruct:", "<hr>", "\n<hr>", "<|", "\n\n"],
+    });
+    const messages = [
+        new SystemMessage({ content: WEBLLM_RESPONSE_SYSTEM_TEMPLATE}),
+        new HumanMessage({ content: `When responding to me, use the following documents as context:\n<context>\n${context}\n</context>`}),
+        new AIMessage({content: "Understood! I will use the documents between the above <context> tags as context when answering your next questions."}),
+        new HumanMessage({content: `${question}` })
+      
+    ];
+    console.log("Messages", messages)
+    const response = await chatModel.invoke(messages);
+    console.log("Response", response)
+    
+    const answer = response.content.trim();
     chrome.scripting.executeScript({
         target: { tabId: tab_id },    // Run in the tab that the user clicked in
         args: [answer],               // The arguments to pass to the function
@@ -323,3 +331,4 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 //////////////////////////////////////////////////////////////
 
+  

@@ -5,13 +5,15 @@ const { Voy } = await import("voy-search");
 const inputElement = document.getElementById('text');
 const outputElement = document.getElementById('output');
 const clippy_button = document.getElementById('ask-clippyllm');
+const DOUBLE_NEWLINE = '\n\n';
 
 
 const getPageContent = () => {
+  const DOUBLE_NEWLINE = '\n\n';
     const page_url = document.URL;
-    const clone = document.body.cloneNode(true);
+    const clone = document.cloneNode(true);
     console.log("getPageContent clone",clone)
-
+    
     const elementsToRemove = [
       'script', 
       'style', 
@@ -27,13 +29,14 @@ const getPageContent = () => {
       '.menu', 
       '.navbar', 
       '.header', 
-      '.footer'
+      '.footer',
+      '[class*="nav"]',
+      '[style*="display: none"]'
+
     ];
     elementsToRemove.forEach(selector => {
       const elements = clone.querySelectorAll(selector);
-      elements.forEach(element => {
-        element.parentNode.removeChild(element);
-      });
+      elements.forEach(element => element.remove());
     });
 
     // Rimuovere stili inline
@@ -41,29 +44,68 @@ const getPageContent = () => {
     for (let i = 0; i < allElements.length; i++) {
         allElements[i].removeAttribute('style');
     }
-    let text = '';
-    const nodeIterator = document.createNodeIterator(clone, NodeFilter.SHOW_TEXT, null, false);
-    let node;
-    while (node = nodeIterator.nextNode()) {
-      text += node.textContent;
-      if (node.parentNode.nodeName === 'DIV' || node.parentNode.nodeName === 'TR' || node.parentNode.nodeName === 'P' || node.parentNode.nodeName === 'LI') {
-        text += '\n';
-      }
-      else if (node.parentNode.nodeName === 'TD' || node.parentNode.nodeName === 'TH'){
-        text =  ' ' + text + ' ';
 
-      }
-    }
+    const extractTextWithNewlines = (element) => {
+      let text = '';
+
+      element.childNodes.forEach(child => {
+          if (child.nodeType === Node.TEXT_NODE) {
+              const trimmedText = child.textContent.trim();
+              if (trimmedText) {
+                  text += trimmedText + ' ';
+              }
+          } else if (child.nodeType === Node.ELEMENT_NODE) {
+              if (child.tagName === 'BR') {
+                  text += '\n';
+              } else if (['DIV', 'P'].includes(child.tagName)) {
+                  text += extractTextWithNewlines(child).trim() + DOUBLE_NEWLINE;
+              } else if (child.tagName === 'TABLE') {
+                  const rows = child.querySelectorAll('tr');
+                  rows.forEach(row => {
+                      const cells = row.querySelectorAll('td, th');
+                      cells.forEach((cell, index) => {
+                          text += extractTextWithNewlines(cell).trim();
+                          if (index < cells.length - 1) {
+                              text += ' ';  // Separatore di celle
+                          }
+                      });
+                      text += '\n';  // Fine riga della tabella
+                  });
+                  text += DOUBLE_NEWLINE;  // Fine tabella
+              } else if (['UL', 'OL'].includes(child.tagName)) {
+                  const items = child.querySelectorAll('li');
+                  items.forEach(item => {
+                      text += '- ' + extractTextWithNewlines(item).trim() + '\n';
+                  });
+                  text += DOUBLE_NEWLINE;  // Fine lista
+              } else if (['H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes(child.tagName)) {
+                  text += '\n' + child.textContent.trim() + '\n';  // Aggiungere nuova linea per separare il titolo dal paragrafo
+              } else if (child.tagName === 'BLOCKQUOTE') {
+                  text += '“' + extractTextWithNewlines(child).trim() + '”' + DOUBLE_NEWLINE;
+              } else if (child.tagName === 'IMG') {
+                  const altText = child.getAttribute('alt');
+                  if (altText) {
+                      text += altText.trim() + DOUBLE_NEWLINE;
+                  }
+              } else {
+                  text += extractTextWithNewlines(child).trim() + ' ';
+              }
+          }
+      });
+  
+      return text.trim();
+    };
+    console.log("Cloned", clone.body)
+    let text = extractTextWithNewlines(clone.body).replace(/\n\s*\n/g, DOUBLE_NEWLINE).trim();
+
+
     console.log("Text: ",text)
-    return [text, page_url];
+    return [text.trim(), page_url];
 
   }
 
   function splitText(text, maxLength = 512) {
-    let sentences = text.split(/(?<=[.!?])\s+|\n+/);
-    sentences = sentences.map(s => s.trim()).filter(sentence => sentence.trim().length > 0);
-    console.log("sentences: ",sentences)
-    return sentences;
+    return text.split(DOUBLE_NEWLINE).map(paragraph => paragraph.trim()).filter(paragraph => paragraph.length > 5);
 }
 // Listen for changes made to the textbox.
 clippy_button.addEventListener('click', (event) => {
@@ -90,7 +132,7 @@ clippy_button.addEventListener('click', (event) => {
                 // Handle results returned by the service worker (`background.js`) and update the popup's UI.
                 const resource = { embeddings: data};
                 const index = new Voy(resource);
-                const q = event.target.value;
+                const q = inputElement.value;
         
                 const embedding_message_query = {
                     action: 'embed',
