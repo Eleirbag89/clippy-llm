@@ -6,17 +6,34 @@ const inputElement = document.getElementById('text');
 const outputElement = document.getElementById('output');
 const clippy_button = document.getElementById('ask-clippyllm');
 
+
 const getPageContent = () => {
     const page_url = document.URL;
     const clone = document.body.cloneNode(true);
     console.log("getPageContent clone",clone)
 
-    const tagsToRemove = ['script', 'style', 'meta', 'noscript'];
-    tagsToRemove.forEach(tag => {
-      const elements = clone.getElementsByTagName(tag);
-      while (elements.length > 0) {
-        elements[0].parentNode.removeChild(elements[0]);
-      }
+    const elementsToRemove = [
+      'script', 
+      'style', 
+      'meta', 
+      'noscript',
+      'header', 
+      'footer', 
+      'nav', 
+      'aside', 
+      '.sidebar', 
+      '.advertisement', 
+      '.ads', 
+      '.menu', 
+      '.navbar', 
+      '.header', 
+      '.footer'
+    ];
+    elementsToRemove.forEach(selector => {
+      const elements = clone.querySelectorAll(selector);
+      elements.forEach(element => {
+        element.parentNode.removeChild(element);
+      });
     });
 
     // Rimuovere stili inline
@@ -29,8 +46,12 @@ const getPageContent = () => {
     let node;
     while (node = nodeIterator.nextNode()) {
       text += node.textContent;
-      if (node.parentNode.nodeName === 'DIV') {
+      if (node.parentNode.nodeName === 'DIV' || node.parentNode.nodeName === 'TR' || node.parentNode.nodeName === 'P' || node.parentNode.nodeName === 'LI') {
         text += '\n';
+      }
+      else if (node.parentNode.nodeName === 'TD' || node.parentNode.nodeName === 'TH'){
+        text =  ' ' + text + ' ';
+
       }
     }
     console.log("Text: ",text)
@@ -54,7 +75,7 @@ clippy_button.addEventListener('click', (event) => {
           func: getPageContent
         }, (page_content) => {
             const [dom, page_url] = page_content[0].result;
-           
+            const tab_id = tabs[0].id
             console.log("Content", page_content)
             const phrases = splitText(dom);
         
@@ -62,7 +83,8 @@ clippy_button.addEventListener('click', (event) => {
             const embedding_message = {
                 action: 'embed',
                 text: phrases,
-                url: page_url
+                url: page_url,
+                tab: tab_id
             }
             chrome.runtime.sendMessage(embedding_message, (data) => {
                 // Handle results returned by the service worker (`background.js`) and update the popup's UI.
@@ -73,6 +95,7 @@ clippy_button.addEventListener('click', (event) => {
                 const embedding_message_query = {
                     action: 'embed',
                     text: [q],
+                    tab: tab_id
                 }
                 chrome.runtime.sendMessage(embedding_message_query, (processed) => {
                     const results = index.search(processed[0], 10);
@@ -85,7 +108,8 @@ clippy_button.addEventListener('click', (event) => {
                     const question_message = {
                         action: 'answer_question',
                         question: q,
-                        context: context
+                        context: context,
+                        tab: tab_id
                     }
                     chrome.runtime.sendMessage(question_message, (answer) => {
                         console.log("Answer", answer)

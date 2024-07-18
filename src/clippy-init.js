@@ -63,7 +63,6 @@ clippy.load("Clippy", function(agent) {
     agent.reposition();
     window.agent.play("Greeting");
     window.agent.speak( "Hey there");
-    //agent.moveTo(100, 100);
 
-    setInterval(talk_f, 12000);
+    setInterval(talk_f, 30000);
 });

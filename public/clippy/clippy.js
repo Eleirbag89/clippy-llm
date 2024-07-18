@@ -181,6 +181,7 @@ clippy.Agent.prototype = {
         }, this);
     },
     start_processing:function () {
+        if (this._processing) return;
         this._processing = true;
         this.think()
     },
@@ -190,6 +191,7 @@ clippy.Agent.prototype = {
             this.play('Thinking', undefined, () => window.agent.think());
         }
     },  
+
     end_processing:function () {
         this._processing = false;
     },
@@ -458,6 +460,9 @@ clippy.Agent.prototype = {
         if (scope) func = $.proxy(func, scope);
         this._queue.queue(func);
     },
+    clear_text:function () {
+        this._queue.clear();
+    },
 
     /**************************** Pause and Resume ************************************/
 
@@ -634,7 +639,7 @@ clippy.Animator.prototype = {
         }
 
         this._draw();
-        this._playSound();
+        //this._playSound();
 
         this._loop = window.setTimeout($.proxy(this._step, this), this._currentFrame.duration);
 

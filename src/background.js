@@ -90,6 +90,8 @@ const summarize = async (text) => {
         // You can track the progress of the pipeline creation here.
         // e.g., you can send `data` back to the UI to indicate a progress bar
         console.log('progress', data)
+
+        
     });
 
     // Actually run the model on the input text
@@ -100,13 +102,21 @@ const summarize = async (text) => {
     return result;
 };
 
-const embed = async (text, page_url) => {
+const embed = async (text, page_url, tab_id) => {
     // Get the pipeline instance. This will load and build the model when run for the first time.
     console.log("EMBED METHOD", page_url)
+    console.log("TAB ID", tab_id)
+    chrome.scripting.executeScript({
+        target: { tabId: tab_id },    // Run in the tab that the user clicked in
+        args: [],               // The arguments to pass to the function
+        function: () => {       // The function to run
+            window.agent.start_processing();
+        },
+    });
     if (page_url) {
         const embeddings = await get_embeddings(page_url);
         console.log("IndexDb emb", embeddings)
-        if (embeddings) {
+        if (embeddings && embeddings.length > 0) {
             return embeddings;
         }
          
@@ -115,9 +125,26 @@ const embed = async (text, page_url) => {
         // You can track the progress of the pipeline creation here.
         // e.g., you can send `data` back to the UI to indicate a progress bar
         console.log('progress', data)
+        if (data.status == 'initiate') {
+            chrome.scripting.executeScript({
+                target: { tabId: tab_id },    // Run in the tab that the user clicked in
+                args: [data],               // The arguments to pass to the function
+                function: (data) => {       // The function to run
+                    window.agent.speak("Loading model file" + data.file  + " for embedding", false);
+                },
+            });
+
+        }
     });
 
-    // Actually run the model on the input text
+    chrome.scripting.executeScript({
+        target: { tabId: tab_id },    
+        args: [],              
+        function: () => {     
+            window.agent.clear_text();
+            window.agent.speak("Analyzing web page...");
+        },
+    });
     let result = (await extractor(text,  { pooling: 'mean', normalize: true })).tolist();
     console.log("EMBED result", result)
     const data = result.map(( emb , i) => ({
@@ -130,23 +157,65 @@ const embed = async (text, page_url) => {
     if (page_url) {
         await add_embeddings(data);
     }
-   
+    chrome.scripting.executeScript({
+        target: { tabId: tab_id },    
+        args: [],              
+        function: () => {    
+            window.agent.clear_text();  
+            window.agent.speak("Web page analisys done.");
+        },
+    });
 
     return data;
 };
 
-const answer_question = async (question, context) => {
+const answer_question = async (question, context, tab_id) => {
     // Get the pipeline instance. This will load and build the model when run for the first time.
     console.log("answer_question METHOD\nQuestion:", question, "\nContext: ", context)
     const generator = await QuestionAnsweringPipelineSingleton.getInstance((data) => {
         // You can track the progress of the pipeline creation here.
         // e.g., you can send `data` back to the UI to indicate a progress bar
         console.log('progress', data)
+        if (data.status == 'initiate') {
+            chrome.scripting.executeScript({
+                target: { tabId: tab_id },    // Run in the tab that the user clicked in
+                args: [data],               // The arguments to pass to the function
+                function: (data) => {       // The function to run
+                    
+                    window.agent.speak("Loading model file" + data.file  + " for question answering");
+                    window.agent.start_processing();
+                },
+            });
+
+        } else if (data.status == 'ready') {
+           
+            chrome.scripting.executeScript({
+                target: { tabId: tab_id },    // Run in the tab that the user clicked in
+                args: [],               // The arguments to pass to the function
+                function: () => {       // The function to run
+                    window.agent.clear_text();
+                    window.agent.speak("Processing your question...");
+                },
+            });
+
+        }
     });
 
     const output =  await generator(question, context);
     console.log("output", output)
     const answer = output.answer
+    chrome.scripting.executeScript({
+        target: { tabId: tab_id },    // Run in the tab that the user clicked in
+        args: [answer],               // The arguments to pass to the function
+        function: (result) => {       // The function to run
+            // NOTE: This function is run in the context of the web page, meaning that `document` is available.
+            window.agent.end_processing();
+            window.agent.clear_text();
+            window.agent.play("Explain");
+            window.agent.speak(result);
+            
+        },
+    });
     return answer;
 
 };
@@ -213,6 +282,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 // Listen for messages from the UI, process it, and send the result back.
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('sender', sender)
+
     if (message.action == 'summarize') {
         // Run model prediction asynchronously
         (async function () {
@@ -229,7 +299,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     } else if (message.action == 'embed') {
 
         (async function () {
-            let result = await embed(message.text, message.url);
+            
+            let result = await embed(message.text, message.url, message.tab);
 
             // Send response back to UI
             sendResponse(result);
@@ -239,7 +310,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     } else if (message.action == 'answer_question') {
         (async function () {
             // Perform classification
-            let result = await answer_question(message.question, message.context);
+            let result = await answer_question(message.question, message.context, message.tab);
 
             // Send response back to UI
             sendResponse(result);
