@@ -13,12 +13,32 @@
 
 <body>
     <div class="container">
-        <h1>ClippyLLM</h1>
-        <input id="text" placeholder="Enter text here">
-        <button id="ask-clippyllm" type="button">Ask Clippy!</button>
-
-        <pre id="output"></pre>
+        <div class="menu">
+            <button class="tab-btn active" data-tab="clip"><h1>📎</h1></button>
+            <button class="tab-btn" data-tab="database"><h1>💾</h1></button>
+            <button class="tab-btn" data-tab="info"><h1>🤔</h1></button>
+        </div>
+        <div class="content">
+            <div id="clip" class="tab-content active">
+            <h1>📎 ClippyLLM</h1>
+            <textarea id="text" placeholder="Enter text here"></textarea>
+            <button id="ask-clippyllm" type="button">Ask Clippy!</button>
+    
+            <pre id="output"></pre>
+            </div>
+            <div id="database" class="tab-content">
+            <h1>Database</h1>
+            <p>Contenuto della tab Database</p>
+            </div>
+            <div id="info" class="tab-content">
+            <h1>Info</h1>
+            <p>Contenuto della tab Info</p>
+            </div>
+        </div>
+        </div>
     </div>
+    <script src="tab.js"></script>
+
 </body>
 
 </html>

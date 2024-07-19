@@ -72,22 +72,19 @@ class EmbeddingPipelineSingleton {
 
 
 class InstructModelSingleton {
-    static instance = null;
-    
     static async getInstance(progress_callback = null) {
-        console.log("Singleton Instruct model");
-        if (this.instance === null) {
-            const webllmModel = new ChatWebLLM({
-                model: "Phi-3-mini-4k-instruct-q4f16_1-MLC",
-                chatOptions: {
-                    temperature: 0.1,
-                },
-              });
+        console.log("Instruct model");
 
-            await webllmModel.initialize(progress_callback);
-            this.instance = webllmModel
-        }
-        return this.instance;
+        const webllmModel = new ChatWebLLM({
+            model: "Phi-3-mini-4k-instruct-q4f16_1-MLC",
+            chatOptions: {
+                temperature: 0.1,
+            },
+            });
+
+        await webllmModel.initialize(progress_callback);
+        console.log("WEBLLM", this.instance);
+        return webllmModel
     }
 }
 
@@ -307,7 +304,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     } else if (message.action == 'embed') {
 
         (async function () {
-            
             let result = await embed(message.text, message.url, message.tab);
 
             // Send response back to UI
