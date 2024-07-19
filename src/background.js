@@ -91,6 +91,7 @@ class InstructModelSingleton {
 const summarize = async (text) => {
     // Get the pipeline instance. This will load and build the model when run for the first time.
     console.log("SUMMARIZE METHOD")
+    chrome.alarms.create('keepAlive', { periodInMinutes: 1 });
     let generator = await SummarizePipelineSingleton.getInstance((data) => {
         // You can track the progress of the pipeline creation here.
         // e.g., you can send `data` back to the UI to indicate a progress bar
@@ -104,6 +105,7 @@ const summarize = async (text) => {
         max_new_tokens: 100,
       });
     console.log("Summarize result", result)
+    chrome.alarms.clear('keepAlive');
     return result;
 };
 
@@ -111,6 +113,7 @@ const embed = async (text, page_url, tab_id) => {
     // Get the pipeline instance. This will load and build the model when run for the first time.
     console.log("EMBED METHOD", page_url)
     console.log("TAB ID", tab_id)
+    chrome.alarms.create('keepAlive', { periodInMinutes: 1 });
     chrome.scripting.executeScript({
         target: { tabId: tab_id },    // Run in the tab that the user clicked in
         args: [],               // The arguments to pass to the function
@@ -221,6 +224,7 @@ If there is nothing in the context relevant to the question at hand, just say "H
             
         },
     });
+    chrome.alarms.clear('keepAlive');
     return answer;
 
 };
@@ -286,7 +290,6 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 // 
 // Listen for messages from the UI, process it, and send the result back.
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('sender', sender)
 
     if (message.action == 'summarize') {
         // Run model prediction asynchronously
@@ -326,5 +329,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     
 });
 //////////////////////////////////////////////////////////////
+self.addEventListener('install', event => {
+    console.log('Service Worker installed');
+    chrome.storage.local.set({ isProcessing: false })
+  });
 
-  
+self.addEventListener('message', event => {
+  if (event.data === 'keepAlive') {
+    console.log('Mantieni attivo');
+  }
+});
+
+
+
+chrome.alarms.onAlarm.addListener(alarm => {
+  if (alarm.name === 'keepAlive') {
+    console.log('Eseguire qualche attività per mantenere attivo il service worker');
+  }
+});

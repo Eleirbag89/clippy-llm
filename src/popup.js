@@ -7,7 +7,6 @@ const outputElement = document.getElementById('output');
 const clippy_button = document.getElementById('ask-clippyllm');
 const DOUBLE_NEWLINE = '\n\n';
 
-
 const getPageContent = () => {
   const DOUBLE_NEWLINE = '\n\n';
     const page_url = document.URL;
@@ -109,7 +108,8 @@ const getPageContent = () => {
 }
 // Listen for changes made to the textbox.
 clippy_button.addEventListener('click', (event) => {
-    
+    chrome.storage.local.set({ isProcessing: true })
+
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         console.log("Execute Script", inputElement.value);
         chrome.scripting.executeScript({
@@ -156,6 +156,7 @@ clippy_button.addEventListener('click', (event) => {
                     chrome.runtime.sendMessage(question_message, (answer) => {
                         console.log("Answer", answer)
                         outputElement.innerText = JSON.stringify(answer, null, 2);
+                        chrome.storage.local.set({ isProcessing: false })
                     });
                 });
 
@@ -165,7 +166,7 @@ clippy_button.addEventListener('click', (event) => {
 
         });
       }); 
-
+      
   return;
 
 });
