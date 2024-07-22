@@ -64,7 +64,7 @@ body {
     font-family: 'Roboto Mono', monospace;
     height: 100px;
 }
-#ask-clippyllm {
+.clippy-btn {
     background-color: #04AA6D; /* Green */
     border: none;
     color: white;
@@ -75,9 +75,46 @@ body {
     font-size: 16px;
   }
 
-  #ask-clippyllm:disabled {
+  .clippy-btn:disabled, .clippy-btn-small:disabled {
     background-color: #cccccc; /* Gray */
     color: #666666; /* Dark gray */
     cursor: not-allowed;
     opacity: 0.6; /* Make the button slightly transparent */
+  }
+
+  .clippy-btn-small {
+    background-color: #04AA6D; /* Green */
+    border: none;
+    color: white;
+    padding: 10px 16px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 12px;
+  }
+
+  .clippy-btn-delete {
+    background-color: #ef0000; /* Green */
+    border: none;
+    color: white;
+    padding: 10px 16px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 12px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+  }
+  
+  th {
+    background-color: #f2f2f2;
+    text-align: left;
   }

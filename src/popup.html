@@ -22,13 +22,31 @@
             <div id="clip" class="tab-content active">
             <h1>📎 ClippyLLM</h1>
             <textarea id="text" placeholder="Enter text here"></textarea>
-            <button id="ask-clippyllm" type="button">Ask Clippy!</button>
+            <button id="ask-clippyllm" type="button" class="clippy-btn">Ask Clippy!</button>
     
             <pre id="output"></pre>
             </div>
             <div id="database" class="tab-content">
             <h1>Database</h1>
-            <p>Contenuto della tab Database</p>
+            <table id="data-table">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th>Site</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Rows will be populated by JavaScript -->
+                </tbody>
+              </table>
+              <div>
+                <button id="prev-page" class="clippy-btn-small">Previous</button>
+                <button id="next-page" class="clippy-btn-small">Next</button>
+              </div>
+              <div>
+                <button id="delete-selected" class="clippy-btn-delete">Delete Selected</button>
+              </div>
             </div>
             <div id="info" class="tab-content">
             <h1>Info</h1>
