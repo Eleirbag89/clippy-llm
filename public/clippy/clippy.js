@@ -181,11 +181,14 @@ clippy.Agent.prototype = {
         }, this);
     },
     start_processing:function () {
-        if (this._processing) return;
+        var c = this._animator.currentAnimationName;
+        const thinking_playng = c && c.indexOf('Thinking') === 0;
+        if (this._processing && thinking_playng) return;
         this._processing = true;
         this.think()
     },
     think:function () {
+
         if (this._processing) {
             console.log("Clippy is processing")
             this.play('Thinking', undefined, () => window.agent.think());

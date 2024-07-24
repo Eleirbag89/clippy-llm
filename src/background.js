@@ -5,7 +5,7 @@ import { openDB } from 'idb';
 
 import { ChatWebLLM } from "@langchain/community/chat_models/webllm";
 import { HumanMessage, SystemMessage, AIMessage } from "@langchain/core/messages";
-
+import { Voy } from "voy-search";
 // Skip initial check for local models, since we are not loading any local models.
 env.allowLocalModels = false;
 
@@ -83,7 +83,7 @@ class InstructModelSingleton {
             });
 
         await webllmModel.initialize(progress_callback);
-        console.log("WEBLLM", this.instance);
+        console.log("WEBLLM", webllmModel);
         return webllmModel
     }
 }
@@ -109,19 +109,62 @@ const summarize = async (text) => {
     return result;
 };
 
-const embed = async (text, page_url, tab_id) => {
+
+const process = async(message) => {
+    startHeartbeat();
+    chrome.tabs.sendMessage(message.tab, {
+        action: "clippy_start_processing",
+    });
+ 
+    const embeddings_page = await embed_text(message.text, message.url, message.tab, true);
+    console.log("EP", embeddings_page)
+    chrome.tabs.sendMessage(message.tab, {
+        action: "clippy_speak",
+        text: "Web page analisys done.",
+        clear_text: true
+    });
+    chrome.tabs.sendMessage(message.tab, {
+        action: "clippy_start_processing",
+    });
+    const resource = { embeddings: embeddings_page};
+    const index = new Voy(resource);
+    console.log("INDEX",index);
+    const embeddings_query= await embed_text(message.query, message.url, message.tab, false);
+    chrome.tabs.sendMessage(message.tab, {
+        action: "clippy_start_processing",
+    });
+    const results = index.search(embeddings_query[0], 10);
+    console.log("Similarity", results.neighbors);
+    // Display search result
+    let context="";
+    results.neighbors.forEach((result) =>
+        context += `${result.title}\n`
+    );
+
+    console.log("Context", context)
+    const answer = await answer_question(message.query, context, message.tab);
+    
+    chrome.tabs.sendMessage(message.tab, {
+        action: "clippy_end_processing",
+    });
+
+    chrome.tabs.sendMessage(message.tab, {
+        action: "clippy_speak",
+        text: answer,
+        clear_text: true,
+        animation: "Explain"
+    });
+    stopHeartbeat();
+    return answer;
+   
+};
+
+
+const embed_text = async (text, page_url, tab_id, use_index_db) => {
     // Get the pipeline instance. This will load and build the model when run for the first time.
     console.log("EMBED METHOD", page_url)
     console.log("TAB ID", tab_id)
-    chrome.alarms.create('keepAlive', { periodInMinutes: 1 });
-    chrome.scripting.executeScript({
-        target: { tabId: tab_id },    // Run in the tab that the user clicked in
-        args: [],               // The arguments to pass to the function
-        function: () => {       // The function to run
-            window.agent.start_processing();
-        },
-    });
-    if (page_url) {
+    if (use_index_db) {
         const embeddings = await get_embeddings(page_url);
         console.log("IndexDb emb", embeddings)
         if (embeddings && embeddings.length > 0) {
@@ -134,25 +177,14 @@ const embed = async (text, page_url, tab_id) => {
         // e.g., you can send `data` back to the UI to indicate a progress bar
         console.log('progress', data)
         if (data.status == 'initiate') {
-            chrome.scripting.executeScript({
-                target: { tabId: tab_id },    // Run in the tab that the user clicked in
-                args: [data],               // The arguments to pass to the function
-                function: (data) => {       // The function to run
-                    window.agent.speak("Loading model file" + data.file  + " for embedding", false);
-                },
+            chrome.tabs.sendMessage(tab_id, {
+                action: "clippy_speak",
+                text: "Loading model file" + data.file  + " for embedding",
+                clear_text: true
             });
-
         }
     });
 
-    chrome.scripting.executeScript({
-        target: { tabId: tab_id },    
-        args: [],              
-        function: () => {     
-            window.agent.clear_text();
-            window.agent.speak("Analyzing web page...");
-        },
-    });
     let result = (await extractor(text,  { pooling: 'mean', normalize: true })).tolist();
     console.log("EMBED result", result)
     const data = result.map(( emb , i) => ({
@@ -162,18 +194,9 @@ const embed = async (text, page_url, tab_id) => {
         page: `${page_url}`,
         embeddings: emb,
     }));
-    if (page_url) {
+    if (use_index_db) {
         await add_embeddings(data);
     }
-    chrome.scripting.executeScript({
-        target: { tabId: tab_id },    
-        args: [],              
-        function: () => {    
-            window.agent.clear_text();
-            window.agent.speak("Web page analisys done.");
-        },
-    });
-
     return data;
 };
 
@@ -185,17 +208,16 @@ If there is nothing in the context relevant to the question at hand, just say "H
     // Get the pipeline instance. This will load and build the model when run for the first time.
     console.log("answer_question METHOD\nQuestion:", question, "\nContext: ", context)
     let webllmModel = await InstructModelSingleton.getInstance((data) => {
-        chrome.scripting.executeScript({
-            target: { tabId: tab_id },    // Run in the tab that the user clicked in
-            args: [data],               // The arguments to pass to the function
-            function: (data) => {       // The function to run
-                window.agent.start_processing();
-                window.agent.clear_text();
-                window.agent.speak(data.text, false);
-            },
+        console.log(data)
+        chrome.tabs.sendMessage(tab_id, {
+            action: "clippy_speak",
+            text: data.text,
+            clear_text: true
         });
     });
-
+    chrome.tabs.sendMessage(tab_id, {
+        action: "clippy_start_processing",
+    });
     // Best guess at Phi-3 tokens
     let chatModel = webllmModel.bind({
         stop: ["\nInstruct:", "Instruct:", "<hr>", "\n<hr>", "<|", "\n\n"],
@@ -212,19 +234,6 @@ If there is nothing in the context relevant to the question at hand, just say "H
     console.log("Response", response)
     
     const answer = response.content.trim();
-    chrome.scripting.executeScript({
-        target: { tabId: tab_id },    // Run in the tab that the user clicked in
-        args: [answer],               // The arguments to pass to the function
-        function: (result) => {       // The function to run
-            // NOTE: This function is run in the context of the web page, meaning that `document` is available.
-            window.agent.end_processing();
-            window.agent.clear_text();
-            window.agent.play("Explain");
-            window.agent.speak(result);
-            
-        },
-    });
-    chrome.alarms.clear('keepAlive');
     return answer;
 
 };
@@ -233,64 +242,90 @@ If there is nothing in the context relevant to the question at hand, just say "H
 //
 // Add a listener to create the initial context menu items,
 // context menu items only need to be created at runtime.onInstalled
-chrome.runtime.onInstalled.addListener(function () {
-    // Register a context menu item that will only show up for selection text.
-    chrome.contextMenus.create({
-        id: 'summarize-selection',
-        title: 'Summarize "%s"',
-        contexts: ['selection'],
+const setup_listeners = function() {
+    console.log("AAAAAAA SETUP")
+    chrome.runtime.onInstalled.addListener(function () {
+        // Register a context menu item that will only show up for selection text.
+        console.log("AAAAAAA CONTEXT")
+        chrome.storage.local.set({ isProcessing: false })
+        chrome.contextMenus.create({
+            id: 'summarize-selection',
+            title: 'Summarize "%s"',
+            contexts: ['selection'],
+        });
     });
-});
+    
+    // Perform inference when the user clicks a context menu
+    chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+        // Ignore context menu clicks that are not for classifications (or when there is no input)
+        if (info.menuItemId !== 'summarize-selection' || !info.selectionText) return;
+        console.log("SUMMARIZE")
+        chrome.scripting.executeScript({
+            target: { tabId: tab.id },    // Run in the tab that the user clicked in
+            args: [],               // The arguments to pass to the function
+            function: () => {       // The function to run
+                // NOTE: This function is run in the context of the web page, meaning that `document` is available.
+                window.agent.start_processing();
+            },
+        });
+        let timer = Date.now();
+    
+        // Perform classification on the selected text
+        let result = await summarize(info.selectionText);
+        let end_time = Math.floor((Date.now() -timer) / 1000)
+        console.log("Time taken", end_time);
+        chrome.scripting.executeScript({
+            target: { tabId: tab.id },    // Run in the tab that the user clicked in
+            args: [],               // The arguments to pass to the function
+            function: () => {       // The function to run
+                // NOTE: This function is run in the context of the web page, meaning that `document` is available.
+                window.agent.end_processing();
+            },
+        });
+        // Do something with the result
+        chrome.scripting.executeScript({
+            target: { tabId: tab.id },    // Run in the tab that the user clicked in
+            args: [result],               // The arguments to pass to the function
+            function: (result) => {       // The function to run
+                // NOTE: This function is run in the context of the web page, meaning that `document` is available.
+                console.log('result', result)
+                console.log('document', document)
+                console.log("summary_text", result[0].summary_text);
+                window.agent.speak(result[0].summary_text);
+                window.agent.play("Explain");
+                console.log("Agent", window.agent)
+            },
+        });
+    });
+}
 
-// Perform inference when the user clicks a context menu
-chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-    // Ignore context menu clicks that are not for classifications (or when there is no input)
-    if (info.menuItemId !== 'summarize-selection' || !info.selectionText) return;
-    console.log("SUMMARIZE")
-    chrome.scripting.executeScript({
-        target: { tabId: tab.id },    // Run in the tab that the user clicked in
-        args: [],               // The arguments to pass to the function
-        function: () => {       // The function to run
-            // NOTE: This function is run in the context of the web page, meaning that `document` is available.
-            window.agent.start_processing();
-        },
-    });
-    let timer = Date.now();
-
-    // Perform classification on the selected text
-    let result = await summarize(info.selectionText);
-    let end_time = Math.floor((Date.now() -timer) / 1000)
-    console.log("Time taken", end_time);
-    chrome.scripting.executeScript({
-        target: { tabId: tab.id },    // Run in the tab that the user clicked in
-        args: [],               // The arguments to pass to the function
-        function: () => {       // The function to run
-            // NOTE: This function is run in the context of the web page, meaning that `document` is available.
-            window.agent.end_processing();
-        },
-    });
-    // Do something with the result
-    chrome.scripting.executeScript({
-        target: { tabId: tab.id },    // Run in the tab that the user clicked in
-        args: [result],               // The arguments to pass to the function
-        function: (result) => {       // The function to run
-            // NOTE: This function is run in the context of the web page, meaning that `document` is available.
-            console.log('result', result)
-            console.log('document', document)
-            console.log("summary_text", result[0].summary_text);
-            window.agent.speak(result[0].summary_text);
-            window.agent.play("Explain");
-            console.log("Agent", window.agent)
-        },
-    });
-});
+setup_listeners();
 //////////////////////////////////////////////////////////////
 
 ////////////////////// 2. Message Events /////////////////////
 // 
 // Listen for messages from the UI, process it, and send the result back.
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action == 'process') {
+        // Run model prediction asynchronously
+        (async function () {
+            try {
+            let result = await process(message);
+            sendResponse(result);
+            }
+            catch(error) {
+                console.error("Si è verificato un errore: ", error.message);
+                chrome.tabs.sendMessage(message.tab, {
+                    action: "clippy_speak",
+                    text: error.message,
+                    clear_text: true
+                });
+                sendResponse("Error: " + error.message);
+            }
 
+        })();
+        return true;
+    }
     if (message.action == 'summarize') {
         // Run model prediction asynchronously
         (async function () {
@@ -304,46 +339,48 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         // return true to indicate we will send a response asynchronously
         // see https://stackoverflow.com/a/46628145 for more information
         return true;
-    } else if (message.action == 'embed') {
-
-        (async function () {
-            let result = await embed(message.text, message.url, message.tab);
-
-            // Send response back to UI
-            sendResponse(result);
-        })();
-
-        return true;
-    } else if (message.action == 'answer_question') {
-        (async function () {
-            // Perform classification
-            let result = await answer_question(message.question, message.context, message.tab);
-
-            // Send response back to UI
-            sendResponse(result);
-        })();
-
-        return true;
-    }
+    } 
 
     
 });
 //////////////////////////////////////////////////////////////
-self.addEventListener('install', event => {
-    console.log('Service Worker installed');
-    chrome.storage.local.set({ isProcessing: false })
+
+
+
+/**
+ * Tracks when a service worker was last alive and extends the service worker
+ * lifetime by writing the current time to extension storage every 20 seconds.
+ * You should still prepare for unexpected termination - for example, if the
+ * extension process crashes or your extension is manually stopped at
+ * chrome://serviceworker-internals. 
+ */
+let heartbeatInterval;
+
+async function runHeartbeat() {
+  await chrome.storage.local.set({ 'last-heartbeat': new Date().getTime() });
+}
+
+/**
+ * Starts the heartbeat interval which keeps the service worker alive. Call
+ * this sparingly when you are doing work which requires persistence, and call
+ * stopHeartbeat once that work is complete.
+ */
+async function startHeartbeat() {
+  // Run the heartbeat once at service worker startup.
+  runHeartbeat().then(() => {
+    // Then again every 20 seconds.
+    heartbeatInterval = setInterval(runHeartbeat, 20 * 1000);
   });
+}
 
-self.addEventListener('message', event => {
-  if (event.data === 'keepAlive') {
-    console.log('Mantieni attivo');
-  }
-});
+async function stopHeartbeat() {
+  clearInterval(heartbeatInterval);
+}
 
-
-
-chrome.alarms.onAlarm.addListener(alarm => {
-  if (alarm.name === 'keepAlive') {
-    console.log('Eseguire qualche attività per mantenere attivo il service worker');
-  }
-});
+/**
+ * Returns the last heartbeat stored in extension storage, or undefined if
+ * the heartbeat has never run before.
+ */
+async function getLastHeartbeat() {
+  return (await chrome.storage.local.get('last-heartbeat'))['last-heartbeat'];
+}

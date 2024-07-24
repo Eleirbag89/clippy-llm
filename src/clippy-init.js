@@ -63,6 +63,36 @@ clippy.load("Clippy", function(agent) {
     agent.reposition();
     window.agent.play("Greeting");
     window.agent.speak( "Hey there");
-
+    
     setInterval(talk_f, 30000);
 });
+
+// Listener per messaggi dal service worker
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "clippy_speak") {
+    if (message.clear_text) {
+      window.agent.clear_text();
+    }
+    if (message.animation) {
+      window.agent.play(message.animation);
+    }
+    window.agent.speak(message.text);
+
+    // Puoi rispondere al service worker
+    sendResponse({ response: true });
+  }
+  else if (message.action === "clippy_start_processing") {
+    window.agent.start_processing();
+
+    // Puoi rispondere al service worker
+    sendResponse({ response: true });
+  }
+  else if (message.action === "clippy_end_processing") {
+    window.agent.end_processing();
+
+    // Puoi rispondere al service worker
+    sendResponse({ response: true });
+  }
+  
+});
+

@@ -21,7 +21,7 @@ const config = {
         filename: '[name].js',
     },
     experiments: {
-        syncWebAssembly: true,
+        asyncWebAssembly: true,
       },
     
     plugins: [

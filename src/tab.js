@@ -5,7 +5,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const contents = document.querySelectorAll('.tab-content');
     console.log("AAAAA", tabs, contents);
     chrome.storage.local.get(['isProcessing'], function(data) {
-        clippy_button.disabled = data.isProcessing;
+      console.log("Processing", data)  
+      clippy_button.disabled = data.isProcessing;
     });
        
   
@@ -29,9 +30,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     chrome.storage.onChanged.addListener((changes, areaName) => {
-        if (changes["isProcessing"]) {
+      console.log("CHanges LS", changes)  
+      if (changes["isProcessing"]) {
             const { _, newValue } = changes['isProcessing'];
             clippy_button.disabled = newValue;
+            console.log("NV", newValue)
         }        
     });
     
@@ -109,7 +112,7 @@ function populateTable(items) {
     tbody.appendChild(row);
   });
 
-  document.querySelectorAll('.delete-button').forEach(button => {
+  document.querySelectorAll('.clippy-btn-delete').forEach(button => {
     button.addEventListener('click', deleteItem);
   });
 }

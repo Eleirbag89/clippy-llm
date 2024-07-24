@@ -8,7 +8,7 @@ body {
   
   .container {
     display: flex;
-    height: 300px;
+    height: 450px;
     width: 450px;
   }
   
@@ -63,6 +63,10 @@ body {
     font-size: 20px;
     font-family: 'Roboto Mono', monospace;
     height: 100px;
+    width: 100%;
+    white-space: pre-wrap;
+    max-height: 100%;
+    overflow: auto;
 }
 .clippy-btn {
     background-color: #04AA6D; /* Green */
