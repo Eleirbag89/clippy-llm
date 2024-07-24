@@ -4,7 +4,7 @@ const clippy_button = document.getElementById('ask-clippyllm');
 
 // Listen for changes made to the textbox.
 clippy_button.addEventListener('click', (event) => {
-    chrome.storage.local.set({ isProcessing: false })
+    chrome.storage.local.set({ isProcessing: true })
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       let activeTab = tabs[0];
       

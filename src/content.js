@@ -13,6 +13,57 @@
 // content.js
 const DOUBLE_NEWLINE = '\n\n';
 
+const extractTextWithNewlines = (element) => {
+    let text = '';
+
+    element.childNodes.forEach(child => {
+        if (child.nodeType === Node.TEXT_NODE) {
+            const trimmedText = child.textContent.trim();
+            if (trimmedText) {
+                text += trimmedText + ' ';
+            }
+        } else if (child.nodeType === Node.ELEMENT_NODE) {
+            if (child.tagName === 'BR') {
+                text += '\n';
+            } else if (['DIV', 'P'].includes(child.tagName)) {
+                text += extractTextWithNewlines(child).trim() + DOUBLE_NEWLINE;
+            } else if (child.tagName === 'TABLE') {
+                const rows = child.querySelectorAll('tr');
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('td, th');
+                    cells.forEach((cell, index) => {
+                        text += extractTextWithNewlines(cell).trim();
+                        if (index < cells.length - 1) {
+                            text += ' ';  // Separatore di celle
+                        }
+                    });
+                    text += '\n';  // Fine riga della tabella
+                });
+                text += DOUBLE_NEWLINE;  // Fine tabella
+            } else if (['UL', 'OL'].includes(child.tagName)) {
+                const items = child.querySelectorAll('li');
+                items.forEach(item => {
+                    text += '- ' + extractTextWithNewlines(item).trim() + '\n';
+                });
+                text += DOUBLE_NEWLINE;  // Fine lista
+            } else if (['H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes(child.tagName)) {
+                text += '\n' + child.textContent.trim() + '\n';  // Aggiungere nuova linea per separare il titolo dal paragrafo
+            } else if (child.tagName === 'BLOCKQUOTE') {
+                text += '“' + extractTextWithNewlines(child).trim() + '”' + DOUBLE_NEWLINE;
+            } else if (child.tagName === 'IMG') {
+                const altText = child.getAttribute('alt');
+                if (altText) {
+                    text += altText.trim() + DOUBLE_NEWLINE;
+                }
+            } else {
+                text += extractTextWithNewlines(child).trim() + ' ';
+            }
+        }
+    });
+
+    return text.trim();
+  };
+
 const getPageContent = () => {
     const page_url = document.URL;
     const clone = document.cloneNode(true);
@@ -49,57 +100,6 @@ const getPageContent = () => {
         allElements[i].removeAttribute('style');
     }
 
-    const extractTextWithNewlines = (element) => {
-      let text = '';
-
-      element.childNodes.forEach(child => {
-          if (child.nodeType === Node.TEXT_NODE) {
-              const trimmedText = child.textContent.trim();
-              if (trimmedText) {
-                  text += trimmedText + ' ';
-              }
-          } else if (child.nodeType === Node.ELEMENT_NODE) {
-              if (child.tagName === 'BR') {
-                  text += '\n';
-              } else if (['DIV', 'P'].includes(child.tagName)) {
-                  text += extractTextWithNewlines(child).trim() + DOUBLE_NEWLINE;
-              } else if (child.tagName === 'TABLE') {
-                  const rows = child.querySelectorAll('tr');
-                  rows.forEach(row => {
-                      const cells = row.querySelectorAll('td, th');
-                      cells.forEach((cell, index) => {
-                          text += extractTextWithNewlines(cell).trim();
-                          if (index < cells.length - 1) {
-                              text += ' ';  // Separatore di celle
-                          }
-                      });
-                      text += '\n';  // Fine riga della tabella
-                  });
-                  text += DOUBLE_NEWLINE;  // Fine tabella
-              } else if (['UL', 'OL'].includes(child.tagName)) {
-                  const items = child.querySelectorAll('li');
-                  items.forEach(item => {
-                      text += '- ' + extractTextWithNewlines(item).trim() + '\n';
-                  });
-                  text += DOUBLE_NEWLINE;  // Fine lista
-              } else if (['H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes(child.tagName)) {
-                  text += '\n' + child.textContent.trim() + '\n';  // Aggiungere nuova linea per separare il titolo dal paragrafo
-              } else if (child.tagName === 'BLOCKQUOTE') {
-                  text += '“' + extractTextWithNewlines(child).trim() + '”' + DOUBLE_NEWLINE;
-              } else if (child.tagName === 'IMG') {
-                  const altText = child.getAttribute('alt');
-                  if (altText) {
-                      text += altText.trim() + DOUBLE_NEWLINE;
-                  }
-              } else {
-                  text += extractTextWithNewlines(child).trim() + ' ';
-              }
-          }
-      });
-  
-      return text.trim();
-    };
-    console.log("Cloned", clone.body)
     let text = extractTextWithNewlines(clone.body).replace(/\n\s*\n/g, DOUBLE_NEWLINE).trim();
 
 
