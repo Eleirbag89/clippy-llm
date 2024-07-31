@@ -108,7 +108,25 @@ const getPageContent = () => {
 
   }
 
-  function splitText(text, maxLength = 512) {
+  function splitLongStrings(arr, soglia) {
+    let result = [];
+
+    arr.forEach(element => {
+        if (element.length > soglia) {
+            // Spezza l'elemento in parti di lunghezza soglia
+            for (let i = 0; i < element.length; i += soglia) {
+                result.push(element.slice(i, i + soglia));
+            }
+        } else {
+            // Aggiungi l'elemento al risultato se è più corto o uguale alla soglia
+            result.push(element);
+        }
+    });
+
+    return result;
+}
+
+  function splitText(text) {
     return text.split(DOUBLE_NEWLINE).map(paragraph => paragraph.trim()).filter(paragraph => paragraph.length > 5);
 }
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -119,7 +137,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         
             const [dom, page_url] = getPageContent();
 
-            const phrases = splitText(dom);
+            const phrases = splitLongStrings(splitText(dom), 512);
             const process_message = {
                 action: 'process',
                 text: phrases,

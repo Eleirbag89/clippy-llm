@@ -50,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('prev-page').addEventListener('click', showPreviousPage);
   document.getElementById('next-page').addEventListener('click', showNextPage);
   document.getElementById('delete-selected').addEventListener('click', deleteSelectedItems);
+  document.getElementById('reset-storage').addEventListener('click', reset_storage);
 });
 
 function openDatabase() {
@@ -63,6 +64,10 @@ function openDatabase() {
   request.onerror = (event) => {
     console.error('Database error:', event.target.error);
   };
+}
+
+function reset_storage() {
+  chrome.storage.local.set({ isProcessing: false })
 }
 
 function displayData() {

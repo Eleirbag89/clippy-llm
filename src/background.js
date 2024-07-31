@@ -184,7 +184,7 @@ const embed_text = async (text, page_url, tab_id, use_index_db) => {
             });
         }
     });
-
+    console.log("Text size", text.length)
     let result = (await extractor(text,  { pooling: 'mean', normalize: true })).tolist();
     console.log("EMBED result", result)
     const data = result.map(( emb , i) => ({
