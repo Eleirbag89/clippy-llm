@@ -1,4 +1,13 @@
 const clippy_button = document.getElementById('ask-clippyllm');
+const clippy_switch = document.getElementById('clippy-switch');
+const external_links = document.querySelectorAll('.external-link');
+
+let db;
+let currentPage = 1;
+const itemsPerPage = 10;
+let uniqueKeys = [];
+
+
 
 document.addEventListener('DOMContentLoaded', function () {
     const tabs = document.querySelectorAll('.tab-btn');
@@ -7,6 +16,15 @@ document.addEventListener('DOMContentLoaded', function () {
     chrome.storage.local.get(['isProcessing'], function(data) {
       console.log("Processing", data)  
       clippy_button.disabled = data.isProcessing;
+    });
+    chrome.storage.local.get(['hideClippy'], function(data) {
+      console.log("HideClippy", data)  
+      if (data.hideClippy){
+        clippy_switch.innerText = "Show clippy";
+      } else {
+        clippy_switch.innerText = "Hide clippy";
+      }
+      
     });
        
   
@@ -37,21 +55,23 @@ document.addEventListener('DOMContentLoaded', function () {
             console.log("NV", newValue)
         }        
     });
-    
-  });
+    console.log("@DOMCONTENTLOAD@")
+    openDatabase();
+    document.getElementById('prev-page').addEventListener('click', showPreviousPage);
+    document.getElementById('next-page').addEventListener('click', showNextPage);
+    document.getElementById('delete-selected').addEventListener('click', deleteSelectedItems);
+    document.getElementById('reset-storage').addEventListener('click', reset_storage);
+    clippy_switch.addEventListener('click', switchClippy);
+    external_links.forEach(link => {
+      const location = link.getAttribute('href');
+      link.addEventListener('click', (e) => {
+        e.preventDefault()
+        chrome.tabs.create({active: true, url: location})
+    });
+    });
+  }, { once: true });
   
-  let db;
-let currentPage = 1;
-const itemsPerPage = 10;
-let uniqueKeys = [];
 
-document.addEventListener('DOMContentLoaded', () => {
-  openDatabase();
-  document.getElementById('prev-page').addEventListener('click', showPreviousPage);
-  document.getElementById('next-page').addEventListener('click', showNextPage);
-  document.getElementById('delete-selected').addEventListener('click', deleteSelectedItems);
-  document.getElementById('reset-storage').addEventListener('click', reset_storage);
-});
 
 function openDatabase() {
   const request = indexedDB.open('clippy_db', 1);
@@ -111,7 +131,7 @@ function populateTable(items) {
     const row = document.createElement('tr');
     row.innerHTML = `
       <td><input type="checkbox" class="select-item" data-key="${item.page}"></td>
-      <td>${item.page}</td>
+      <td class="table-site-url">${item.page}</td>
       <td><button class="clippy-btn-delete" data-key="${item.page}">Delete</button></td>
     `;
     tbody.appendChild(row);
@@ -183,3 +203,15 @@ function deleteItem(event) {
     });
   }
   
+function switchClippy(){
+  chrome.storage.local.get(['hideClippy'], function(data) {
+    console.log("sitchCLippy", data)  
+    chrome.storage.local.set({ hideClippy: !data?.hideClippy })
+    if (data.hideClippy){
+      clippy_switch.innerText = "Hide clippy";
+    } else {
+      clippy_switch.innerText = "Show clippy";
+    }
+    
+  });
+}

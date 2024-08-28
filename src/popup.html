@@ -18,6 +18,7 @@
             <button class="tab-btn" data-tab="database"><h1>💾</h1></button>
             <button class="tab-btn" data-tab="settings"><h1>⚙️</h1></button>
             <button class="tab-btn" data-tab="info"><h1>🤔</h1></button>
+            <button class="tab-btn" data-tab="legal"><h1>©️</h1></button> 
         </div>
         <div class="content">
             <div id="clip" class="tab-content active">
@@ -51,22 +52,30 @@
             </div>
             <div id="settings" class="tab-content">
               <h1>🤔 Settings</h1>
-              <button id="reset-storage" class="clippy-btn-small">Reset processing</button>
-            </div>
+              <p><button id="clippy-switch" class="clippy-btn-small">Reset processing</button></p>
+              <p>
+                If something went wrong and the Ask Clippy button is disabled
+              </p>
+              <p><button id="reset-storage" class="clippy-btn-small">Reset processing</button></p>
             </div>
             <div id="info" class="tab-content">
-            <h1>🤔 Info</h1>
-            <p>ClippyLLM is created by Gabriele Grillo. This extension leverages the powerful technologies of transformers.js, webLLM, and Voy Search to provide users with an enhanced and personalized browsing experience.</p>
-              <p>Special thanks to Aitho for their essential support and contribution to the development of ClippyLLM.</p>
-              
-              <p>ClippyLLM was developed for the DevFest 2024 in Catania.</p>
-              
-              <p>Please note that Clippy is a trademark of Microsoft.</p>
+              <h1>🤔 Info</h1>
+              <p class="medium-text">ClippyLLM is made with ❤️ by Gabriele Grillo. </p>
+              <p class="medium-text">This extension leverages the powerful technologies of <a href="https://huggingface.co/docs/transformers.js/index" class="external-link">transformers.js</a>, <a href="https://webllm.mlc.ai/" class="external-link">webLLM</a>, and <a href="https://github.com/tantaraio/voy" class="external-link">Voy Search</a> to provide users with an enhanced and personalized browsing experience.</p>
+              <p class="medium-text">Special thanks to <a href="https://www.aitho.it" class="external-link">Aitho</a> for their essential support and contribution to the development of ClippyLLM.</p>
+              <p class="medium-text">ClippyLLM was developed for the <a href ="https://gdg.community.dev/gdg-catania" class="external-link">DevFest 2024 in Catania</a>.</p>
+            </div>
+            <div id="legal" class="tab-content">
+              <h1>©️ Disclaimer</h1>
+              <p class="medium-text">"Clippy" and all related names, logos, and designs are the property of Microsoft Corporation.</p>
+              <p class="medium-text">No ownership or rights over "Clippy" or any other Microsoft trademarks are claimed by the creators of this project. All rights regarding "Clippy" and associated intellectual property remain with Microsoft Corporation.</p>
+              <p class="medium-text">This project is not affiliated with, endorsed by, or sponsored by Microsoft Corporation in any way.</p>
+              <p class="medium-text">The use of the "Clippy" character in this project is purely for non-commercial, educational, or fan purposes.</p>              
             </div>
         </div>
         </div>
     </div>
-    <script src="tab.js"></script>
+
 
 </body>
 

@@ -44,6 +44,10 @@ clippy.Agent.prototype = {
      * @param {Boolean=} fast
      *
      */
+    isHidden:function() {
+        return this._hidden;
+    },
+
     hide:function (fast, callback) {
         this._hidden = true;
         var el = this._el;
@@ -116,6 +120,7 @@ clippy.Agent.prototype = {
     },
 
     play:function (animation, timeout, cb) {
+        if (this._hidden) return false;
         if (!this.hasAnimation(animation)) return false;
 
         if (timeout === undefined) timeout = 5000;
@@ -176,6 +181,7 @@ clippy.Agent.prototype = {
      * @param {String} text
      */
     speak:function (text, hold) {
+        if (this._hidden) return;
         this._addToQueue(function (complete) {
             this._balloon.speak(complete, text, hold);
         }, this);

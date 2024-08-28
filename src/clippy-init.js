@@ -47,7 +47,7 @@ const talk_f = function talk() {
       "Remember that progress is not always linear - there will be ups and downs, but keep pushing forward.",
       "Believe in yourself and your abilities - you have what it takes to achieve great things."
     ];
-    if (!window.agent.is_processing()) {
+    if (!window.agent.is_processing() && !window.agent.isHidden()) {
       var index = Math.floor((Math.random() * talks.length));
       window.agent.speak(talks[index]);
       window.agent.play("Explain");
@@ -57,16 +57,41 @@ const talk_f = function talk() {
 
 
 clippy.load("Clippy", function(agent) {
+  chrome.storage.local.get(['hideClippy'], function(data) {
     window.agent = agent;
+    
+    console.log("Clippy init", data?.hideClippy)  
+    if (data?.hideClippy ) {
+      agent.hide();
+    } else {
+      agent.show();
+      agent.reposition();
+      window.agent.play("Greeting");
+      window.agent.speak( "Hey there");
+    }
+    
 
-    agent.show();
-    agent.reposition();
-    window.agent.play("Greeting");
-    window.agent.speak( "Hey there");
     
     setInterval(talk_f, 30000);
+  });
+    
 });
-
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  console.log("CHanges hideClippy", changes)  
+  if (changes["hideClippy"]) {
+        const { _, newValue } = changes['hideClippy'];
+        if (newValue) {
+          window.agent.hide();
+        }
+        else {
+          agent.show();
+          agent.reposition();
+          window.agent.play("Greeting");
+          window.agent.speak( "Hey there");
+        }
+        console.log("NV", newValue)
+    }        
+});
 // Listener per messaggi dal service worker
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "clippy_speak") {

@@ -122,3 +122,12 @@ body {
     background-color: #f2f2f2;
     text-align: left;
   }
+
+  .table-site-url {
+    word-wrap: break-word;
+    max-width: 190px;
+  }
+
+  .medium-text {
+    font-size: medium;
+  }
