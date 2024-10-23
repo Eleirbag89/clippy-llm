@@ -41,7 +41,7 @@
       "24": "icons/icon.png",
       "32": "icons/icon.png"
     },
-    "default_title": "Transformers.js",
+    "default_title": "ClippyLLM",
     "default_popup": "popup.html"
   },
   "content_security_policy": {
