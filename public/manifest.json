@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "ClippyLlm",
-  "description": "ClippyLlm | Your smart assistant",
-  "version": "0.0.1",
+  "name": "ClippyLLM",
+  "description": "ClippyLLM is a smart assistant capable of answering questions about any webpage using a local phi3-mini large language model running in the browser.",
+  "version": "1.0.0",
   "permissions": [
     "activeTab",
     "scripting",
