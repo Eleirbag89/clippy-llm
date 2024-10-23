@@ -12,7 +12,6 @@ let uniqueKeys = [];
 document.addEventListener('DOMContentLoaded', function () {
     const tabs = document.querySelectorAll('.tab-btn');
     const contents = document.querySelectorAll('.tab-content');
-    console.log("AAAAA", tabs, contents);
     chrome.storage.local.get(['isProcessing'], function(data) {
       console.log("Processing", data)  
       clippy_button.disabled = data.isProcessing;
@@ -47,15 +46,14 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
 
-    chrome.storage.onChanged.addListener((changes, areaName) => {
-      console.log("CHanges LS", changes)  
+    chrome.storage.onChanged.addListener((changes, areaName) => { 
       if (changes["isProcessing"]) {
             const { _, newValue } = changes['isProcessing'];
             clippy_button.disabled = newValue;
             console.log("NV", newValue)
         }        
     });
-    console.log("@DOMCONTENTLOAD@")
+
     openDatabase();
     document.getElementById('prev-page').addEventListener('click', showPreviousPage);
     document.getElementById('next-page').addEventListener('click', showNextPage);
@@ -157,7 +155,6 @@ function showNextPage() {
     }
 }
 function deleteItem(event) {
-    console.log(event)
     const key = event.target.dataset.key;
     const transaction = db.transaction(['embeddings'], 'readwrite');
     const objectStore = transaction.objectStore('embeddings');
@@ -166,7 +163,6 @@ function deleteItem(event) {
   
     request.onsuccess = (event) => {
       const items = event.target.result;
-      console.log(items)
       items.forEach(item => {
         objectStore.delete(item.url); // Supponendo che 'id' sia la chiave primaria
       });

@@ -10,7 +10,6 @@ clippy_button.addEventListener('click', (event) => {
       
       // Invia un messaggio al contenuto della scheda attiva
       chrome.tabs.sendMessage(activeTab.id, { message: "executeContentScript", query: inputElement.value, tab: activeTab.id  }, (data) => {
-        console.log("Answer PopUp", data)
         outputElement.innerText = data.response;
         chrome.storage.local.set({ isProcessing: false })
       });

@@ -61,7 +61,6 @@ class EmbeddingPipelineSingleton {
     static instance = null;
     
     static async getInstance(progress_callback = null) {
-        console.log("Singleton pipeline embeddings");
         if (this.instance === null) {
             this.instance = pipeline(this.task, this.model, { progress_callback });
         }
@@ -73,7 +72,6 @@ class EmbeddingPipelineSingleton {
 
 class InstructModelSingleton {
     static async getInstance(progress_callback = null) {
-        console.log("Instruct model");
 
         const webllmModel = new ChatWebLLM({
             model: "Phi-3-mini-4k-instruct-q4f16_1-MLC",
@@ -83,14 +81,12 @@ class InstructModelSingleton {
             });
 
         await webllmModel.initialize(progress_callback);
-        console.log("WEBLLM", webllmModel);
         return webllmModel
     }
 }
 
 const summarize = async (text) => {
     // Get the pipeline instance. This will load and build the model when run for the first time.
-    console.log("SUMMARIZE METHOD")
     chrome.alarms.create('keepAlive', { periodInMinutes: 1 });
     let generator = await SummarizePipelineSingleton.getInstance((data) => {
         // You can track the progress of the pipeline creation here.
@@ -184,9 +180,7 @@ const embed_text = async (text, page_url, tab_id, use_index_db) => {
             });
         }
     });
-    console.log("Text size", text.length)
     let result = (await extractor(text,  { pooling: 'mean', normalize: true })).tolist();
-    console.log("EMBED result", result)
     const data = result.map(( emb , i) => ({
         id: String(i),
         title: text[i],
@@ -288,12 +282,8 @@ const setup_listeners = function() {
             args: [result],               // The arguments to pass to the function
             function: (result) => {       // The function to run
                 // NOTE: This function is run in the context of the web page, meaning that `document` is available.
-                console.log('result', result)
-                console.log('document', document)
-                console.log("summary_text", result[0].summary_text);
                 window.agent.speak(result[0].summary_text);
                 window.agent.play("Explain");
-                console.log("Agent", window.agent)
             },
         });
     });

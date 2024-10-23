@@ -77,7 +77,7 @@ clippy.load("Clippy", function(agent) {
     
 });
 chrome.storage.onChanged.addListener((changes, areaName) => {
-  console.log("CHanges hideClippy", changes)  
+  console.log("Changes hideClippy", changes)  
   if (changes["hideClippy"]) {
         const { _, newValue } = changes['hideClippy'];
         if (newValue) {
@@ -89,7 +89,6 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
           window.agent.play("Greeting");
           window.agent.speak( "Hey there");
         }
-        console.log("NV", newValue)
     }        
 });
 // Listener per messaggi dal service worker

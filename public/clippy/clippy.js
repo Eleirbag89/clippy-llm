@@ -800,7 +800,6 @@ clippy.Balloon.prototype = {
 
         this._complete = complete;
         this._sayWords(text, hold, complete);
-        console.log("CLIPPY SPEAK", text)
     },
 
     show:function () {
@@ -914,7 +913,6 @@ clippy.load._loadMap = function (path) {
     dfd = clippy.load._maps[path] = $.Deferred();
 
     var src = chrome.runtime.getURL('clippy/map.png');
-    console.log("Map.png path", src);
     var img = new Image();
 
     img.onload = dfd.resolve;
