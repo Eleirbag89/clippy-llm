@@ -19,18 +19,14 @@ Clippy Assistant is a Chrome extension that brings the nostalgic Microsoft Clipp
     ```bash
     npm install 
     ```
-
 3. Build the project:
     ```bash
     npm run build 
     ```
-
-Or, to continue development and see changes in real-time:
-
+    Or, to continue development and see changes in real-time:
     ```bash
     npm run dev 
     ```
-
 4. Add the extension to your browser. To do this, go to `chrome://extensions/`, enable developer mode (top right), and click "Load unpacked". Select the `build` directory from the dialog which appears and click "Select Folder".
 
 5. That's it! You should now be able to open the extenion's popup and use the model in your browser!
@@ -38,9 +34,9 @@ Or, to continue development and see changes in real-time:
 ## How It Works
 ### Technologies Used
 
-- (Voy)[https://github.com/tantaraio/voy]: A vector store to manage and retrieve chunks of data from the webpage. The data is stored locally using IndexDB.
-- (Transformers.js)[https://huggingface.co/docs/transformers.js/index]: Used for generating embeddings of the webpage content with the (all-MiniLM-L6-v2)[https://huggingface.co/Xenova/all-MiniLM-L6-v2] model.
-- (WebLLM)[https://webllm.mlc.ai]: Used to run the (Phi-3-mini-4k-instruct-q4f16_1-MLC)[https://huggingface.co/mlc-ai/Phi-3-mini-4k-instruct-q4f16_1-MLC] model directly in the browser for answering questions based on the context extracted from the webpage.
+- [Voy](https://github.com/tantaraio/voy): A vector store to manage and retrieve chunks of data from the webpage. The data is stored locally using IndexDB.
+- [Transformers.js](https://huggingface.co/docs/transformers.js/index): Used for generating embeddings of the webpage content with the (all-MiniLM-L6-v2)[https://huggingface.co/Xenova/all-MiniLM-L6-v2] model.
+- [WebLLM](https://webllm.mlc.ai): Used to run the [Phi-3-mini-4k-instruct-q4f16_1-MLC](https://huggingface.co/mlc-ai/Phi-3-mini-4k-instruct-q4f16_1-MLC) model directly in the browser for answering questions based on the context extracted from the webpage.
 
 ### System Flow
 1. When you ask a question, the webpage content is analyzed and divided into smaller, meaningful chunks.
