@@ -3,7 +3,9 @@ name: Build and Attach Release
 on:
   release:
     types: [created]
-
+permissions:
+  contents: write
+  
 jobs:
   build_and_attach:
     runs-on: ubuntu-latest
