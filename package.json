@@ -16,11 +16,11 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "@langchain/community": "^0.2.19",
+    "@langchain/community": "^0.2.33",
     "@mlc-ai/web-llm": "^0.2.46",
     "@xenova/transformers": "^2.0.0",
     "idb": "^8.0.0",
-    "langchain": "^0.2.10",
+    "langchain": "^0.2.20",
     "voy-search": "^0.6.2"
   }
 }
