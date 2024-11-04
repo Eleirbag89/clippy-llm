@@ -35,7 +35,7 @@ Clippy Assistant is a Chrome extension that brings the nostalgic Microsoft Clipp
 ### Technologies Used
 
 - [Voy](https://github.com/tantaraio/voy): A vector store to manage and retrieve chunks of data from the webpage. The data is stored locally using IndexDB.
-- [Transformers.js](https://huggingface.co/docs/transformers.js/index): Used for generating embeddings of the webpage content with the (all-MiniLM-L6-v2)[https://huggingface.co/Xenova/all-MiniLM-L6-v2] model.
+- [Transformers.js](https://huggingface.co/docs/transformers.js/index): Used for generating embeddings of the webpage content with the [all-MiniLM-L6-v2](https://huggingface.co/Xenova/all-MiniLM-L6-v2) model.
 - [WebLLM](https://webllm.mlc.ai): Used to run the [Phi-3-mini-4k-instruct-q4f16_1-MLC](https://huggingface.co/mlc-ai/Phi-3-mini-4k-instruct-q4f16_1-MLC) model directly in the browser for answering questions based on the context extracted from the webpage.
 
 ### System Flow
